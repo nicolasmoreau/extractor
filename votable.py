@@ -69,7 +69,7 @@ class Field(object):
         self.ref = None
         
     def toString(self):
-        result = '<FIELD '
+        result = '<FIELD'
         
         if self.name is not None : 
             result += ' name="'+self.name+'" '

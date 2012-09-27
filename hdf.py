@@ -67,25 +67,6 @@ class PointerFactory(object):
     def getPointer(self):
         return self.pointer
     
-    """
-        creates Pointer object instances
-    """
-    '''
-    @staticmethod
-    def getPointer(path, dataset, name, column,unit, ucd, skos, utype, description):
-        p = Pointer()
-        p.path = path
-        p.dataset = dataset
-        p.name = name
-        p.column = column
-        p.unit = unit
-        p.ucd = ucd
-        p.skos = skos
-        p.utype = utype
-        p.description = description
-        return p
-    '''
-
 class Pointer(object):
     """
         Points on data in a dataset
@@ -103,6 +84,7 @@ class Pointer(object):
         self.skos = None
         self.utype = None
         self.unit = None
+        self.description = None
 
   
 class PdrHDF(object):
