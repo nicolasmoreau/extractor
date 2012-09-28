@@ -1,10 +1,14 @@
 '''
 Notes :
-Metadata : 
-#PathHDF5 | DataSet | Col.Index | PubDID | HName | IDName | DataType | Unit | 
-SKOS | UCD | utype | StatAtrib | Description
-#   0     |    1    |     2     |   3    |   4   |    5   |   6      |  7   |  8 
-   |  9  |  10   |   11      |   12
+
+PS: Table Metadata :
+ Metadata contains :
+PathHDF5 | DataSet | Col.Index | PubID | HName  | DataType | Unit | SKOS | UCD | utype | Description | ObjParent | Group |
+   0     |    1    |     2     |   3   |   4    |    5     |  6   |  7   |  8  |  9    |   10        |    11     |  12   |
+   
+ Metadata_ObjType contains :
+ PubID | Hname | SKOS | Description
+
 '''
 import h5py as h5
 import votable as vot
@@ -95,7 +99,7 @@ class PdrHDF(object):
         #hdf file
         self.f =  h5.File(filename, 'r')
         #create a pivoted array with the metadata
-        self.metadata = numpy.array(self.f['/Metadata/MetaData']).swapaxes(0,1) 
+        self.metadata = numpy.array(self.f['/Metadata/MetaData'])
         #indexes all the data
         #index[dataset_name][column_name] = pointer
         self.index = self.__buildIndex()
@@ -125,7 +129,7 @@ class PdrHDF(object):
     def __buildIndex(self):
         """
             creates the index
-        """
+        """        
         datasets = {}
         for line in self.metadata:
             if line[1] not in datasets : 
@@ -133,9 +137,9 @@ class PdrHDF(object):
             pf = PointerFactory()
             pf.withPath(line[0]).withDataset(line[1])
             pf.withName(line[4]).withColumn(line[2])
-            pf.withUnit(line[7]).withUcd(line[9])
-            pf.withSkos(line[8]).withUtype(line[10])
-            pf.withDescription(line[12]).getPointer()
+            pf.withUnit(line[6]).withUcd(line[8])
+            pf.withSkos(line[7]).withUtype(line[9])
+            pf.withDescription(line[10]).getPointer()
             datasets[line[1]][line[4]] = pf.getPointer()
         return datasets
         
@@ -198,8 +202,11 @@ class Writer(object):
             
             for i in range(0, size):                
                 values = [column[i] for column in self.columns]                
-                size = len(values)                
-                f.write(self.separator.join([conv.getValue(el, precision) for el in values]))
+                size = len(values)          
+                if isinstance(values[0],numpy.string_) is False:
+                    f.write(self.separator.join([conv.getValue(el, precision) for el in values]))
+                else:
+                    f.write(self.separator.join(values))
                 f.write("\n")              
             f.close()
         except Exception as e:
