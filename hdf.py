@@ -206,6 +206,8 @@ class Writer(object):
             result = ''
             if self.header is not None :
                 result += "".join(self.header)
+            result += '#'
+            for pointer in self.pointers : 
                 result+=pointer.name+self.separator
             f.write(result[0:len(result)-1]+"\n")
             size = len(self.columns[0])
@@ -243,7 +245,7 @@ class Exporter(object):
     def exportAsText(hdf5, header, columns, outputfile, separator=",", isdouble=False): 
         """
         export selected data into text file
-        """        
+        """      
         w = Writer(outputfile, header, separator, isdouble)
         for i in range(0,len(columns)):
             parts = columns[i].split(cfg.internalSeparator)
