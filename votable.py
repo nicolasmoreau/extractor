@@ -43,16 +43,96 @@ class FieldBuilder(object):
     def withXtype(self, xtype):
         self.field.xtype = xtype
         return self
-    
+
     def withRef(self, ref):
         self.field.ref = ref
         return self
-    
+        
+    def withDescription(self, description):
+        self.field.description = description
+        return self
+        
+    def withLink(self, link):
+        if isinstance(link, Link):
+            self.field.link = link
+            return self
+        else : 
+            raise Exception('link must be an instance of Link class')
+
     def getField(self):
         return self.field
+        
+class LinkBuilder(object):
+    def __init__(self):
+        self.link = Link()
+        
+    def withId(self, id):
+        self.link.id = id
+        return self
+
+    def withContentRole(self, contentRole):
+        self.link.contentRole = contentRole
+        return self
+        
+    def withContentType(self, contentType):
+        self.link.contentType = contentType
+        return self
+        
+    def withTitle(self, title):
+        self.link.title = title
+        return self
+        
+    def withValue(self, value):
+        self.link.value = value
+        return self
+        
+    def withHref(self, href):
+        self.link.href = href
+        return self        
+        
+    def withAction(self, action):
+        self.link.action = action
+        return self
+        
+    def getLink(self):
+        return self.link
     
         
-    
+class Link(object):
+    def __init__(self):
+        self.id = None
+        self.contentRole = None
+        self.contentType = None
+        self.title = None
+        self.value = None
+        self.href = None
+        self.action = None
+        
+    def toString(self):
+        result = '<LINK'
+        
+        if self.id is not None : 
+            result += ' ID="'+self.id+'"'
+            
+        if self.contentRole is not None : 
+            result += ' content-role="'+self.contentRole+'"'
+            
+        if self.contentType is not None : 
+            result += ' content-type="'+self.contentType+'"'
+            
+        if self.title is not None : 
+            result += ' title="'+self.title+'"'
+            
+        if self.value is not None : 
+            result += ' value="'+self.value+'"'
+            
+        if self.href is not None : 
+            result += ' href="'+self.href+'"'    
+            
+        if self.action is not None : 
+            result += ' action="'+self.action+'"'
+        
+        return result+'/>'
 
 class Field(object):
     def __init__(self):
@@ -67,6 +147,9 @@ class Field(object):
         self.precision = None
         self.xtype = None
         self.ref = None
+        self.description = None
+        self.link = None
+        
         
     def toString(self):
         result = '<FIELD'
@@ -104,8 +187,16 @@ class Field(object):
         if self.ref is not None : 
             result += ' ref="'+self.ref+'" '
         
-        return result+'/>'
+        result += '>'
         
+        if self.description is not None :             
+            result += "\n<DESCRIPTION>"+self.description+'</DESCRIPTION>'
+            return result
+            
+        if self.link is not None : 
+            result += "\n"+self.link.toString()            
+           
+        return result+"\n</FIELD>"
 
 class Votable(object):
     def __init__(self):

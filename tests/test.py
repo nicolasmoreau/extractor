@@ -44,6 +44,35 @@ class TestPointer(unittest.TestCase):
         self.assertTrue(p.objParent is None)
         self.assertTrue(p.group is None)
         
+class TestLinkFactory(unittest.TestCase):
+    def setUp(self):
+        builder = vot.LinkBuilder()
+        builder.withId('id').withContentRole('role')
+        builder.withContentType('type').withTitle('title')
+        builder.withValue('value').withHref('href')
+        builder.withAction('action')
+        self.link = builder.getLink()
+        
+    def test_getLink(self):
+        self.assertTrue(self.link.id == 'id')
+        self.assertTrue(self.link.contentRole == 'role')
+        self.assertTrue(self.link.contentType == 'type')
+        self.assertTrue(self.link.title == 'title')
+        self.assertTrue(self.link.value == 'value')
+        self.assertTrue(self.link.href == 'href')
+        self.assertTrue(self.link.action == 'action')
+        
+class TestLink(unittest.TestCase):
+    def test_getLink(self):
+        l = vot.Link()
+        self.assertTrue(l.id is None)
+        self.assertTrue(l.contentRole is None)
+        self.assertTrue(l.contentType is None)
+        self.assertTrue(l.title is None)
+        self.assertTrue(l.value is None)
+        self.assertTrue(l.href is None)
+        self.assertTrue(l.action is None)
+        
 class TestConversion(unittest.TestCase):
     def test_float(self):        
         result = str(convert.getValue(1.0, cfg.floatPrecision))
@@ -130,13 +159,15 @@ class TestField(unittest.TestCase):
         
     def test_toString(self):
         field = vot.FieldBuilder().withName('name').getField()
-        self.assertTrue(field.toString() == '<FIELD name="name" />')
+        self.assertTrue(field.toString() == "<FIELD name=\"name\" >\n</FIELD>")
     
         
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestPointerFactory('test_getPointer'))
     suite.addTest(TestPointer('test_getPointer'))
+    suite.addTest(TestLink('test_getLink'))
+    suite.addTest(TestLinkFactory('test_getLink'))
     suite.addTest(TestConversion('test_float'))
     suite.addTest(TestConversion('test_double'))
     suite.addTest(TestPdrHDF('test_defaultcolumn'))

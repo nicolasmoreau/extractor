@@ -261,13 +261,12 @@ class Exporter(object):
         datatype='float'
         if isdouble : 
             datatype = 'double'
-        #w = Writer(outputfile, header, separator, isdouble)
         for i in range(0,len(columns)):
             parts = columns[i].split(cfg.internalSeparator)
             builder = vot.FieldBuilder()
             field = hdf5.index[parts[0]][parts[1]]
-            table.addField(builder.withName(field.name).withUnit(field.unit).withUcd(field.ucd).withUtype(field.utype).withDatatype(datatype).getField())
+            link = vot.LinkBuilder().withContentRole('type').withHref(field.skos).getLink()
+            table.addField(builder.withName(field.name).withUnit(field.unit).withUcd(field.ucd).withUtype(field.utype).withDatatype(datatype).withLink(link).getField())
             table.addColumn(hdf5.extractQuantity(hdf5.index[parts[0]][parts[1]]))
-            #w.addColumn(hdf5.index[parts[0]][parts[1]], hdf5.extractQuantity(hdf5.index[parts[0]][parts[1]]))    
         table.toFile(outputfile)
 

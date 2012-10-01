@@ -216,6 +216,9 @@ class MainFrame(object):
         self.defaultColumn = None   
         """ column automcatically exported with data for plotting """
         
+        self.defaultColumnAdded = False
+        """ True when the default column has already been appended to the current selection"""
+        
         self.frame.master.title(cfg.applicationName)      
         
         self.contentFrame = None   
@@ -253,8 +256,11 @@ class MainFrame(object):
         self.sampWidget = None
         
         self.precision = cfg.floatPrecision
+        
         self.columnDescriptionText = None
+        
         self.lastColumns = None
+        """ previously selected columns, to display descriptions """
         
         self.__initUI()
         """ initialize GUI """       
@@ -394,7 +400,7 @@ class MainFrame(object):
         self.menuButton.menu=tk.Menu(self.menuButton, tearoff=False)
         self.menuButton["menu"]=self.menuButton.menu
         self.menuButton.menu.add_command(label='Open HDF', command=self.__askOpenHdfFile)        
-        self.menuButton.menu.add_command(label='Open Script', command=self.__askOpenScriptFile)        
+        self.menuButton.menu.add_command(label='Apply script', command=self.__askOpenScriptFile)        
         self.menuButton.pack(side=tk.LEFT)   
         
         configurationMenuButton = tk.Menubutton(menuContainer, text="Text Configuration")        
@@ -469,7 +475,8 @@ class MainFrame(object):
         """
         self.exportedData = u.ScriptReader.getColumns(filename)
         self.precision, self.exportedDataHeader = u.ScriptReader.getHeader(filename)
-        self.__export()
+        self.__exportAsText()
+        self.__cleanSelection()
             
     def __parseHdf(self, filename):
         """
@@ -501,6 +508,7 @@ class MainFrame(object):
         self.exportedDataWidget.delete(0, tk.END)
         del self.exportedData[:]
         self.__setButtonsState(False)    
+        self.defaultColumnAdded = False     
        
     def __addSelectedData(self):
         """
@@ -520,7 +528,7 @@ class MainFrame(object):
         """       
         for i in self.exportedDataWidget.curselection():
             self.exportedData.pop(int(i))
-            self.exportedDataWidget.delete(int(i))
+            self.exportedDataWidget.delete(int(i))            
 
         
     def __saveScript(self):
@@ -533,12 +541,23 @@ class MainFrame(object):
         for value in self.exportedData:
             f.write(value+"\n")
         f.close()    
-
+        
+    def __hasMeshOnly(self):
+        """
+            verify if selected data are only MeshCell
+        """
+        for value in self.exportedData:
+            parts = value.split(cfg.internalSeparator)
+            meta = self.hdfData.index[parts[0]][parts[1]]
+            if meta.group != 'MeshCell':
+                return False
+        return True
+            
     def __exportAsText(self): 
         """
         export selected data into text file
         """
-        self.exportedData.append("Positions"+cfg.internalSeparator+self.defaultColumn)
+        self.__appendMeshColumns()
         filename = tkFileDialog.asksaveasfilename(filetypes=[(cfg.txtFileDescription,"*."+cfg.txtFileExtension)])
         
         isDouble = True
@@ -551,7 +570,7 @@ class MainFrame(object):
         """
         export selected data into votable file
         """
-        self.exportedData.append("Positions:"+self.defaultColumn)
+        self.__appendMeshColumns()
         filename = tkFileDialog.asksaveasfilename(filetypes=[(cfg.votableFileDescription,"*."+cfg.votableFileExtension)])
         
         isDouble = True
@@ -560,13 +579,20 @@ class MainFrame(object):
 
         hdf.Exporter.exportAsVotable(self.hdfData, self.exportedDataHeader, self.exportedData, filename, isDouble)
         
-    def __sendSampTable(self):      
+    def __appendMeshColumns(self):
+        if self.__hasMeshOnly() and not self.defaultColumnAdded :
+            self.exportedData.append("Positions"+cfg.internalSeparator+self.defaultColumn)   
+            self.defaultColumnAdded = True     
+        
+    def __sendSampTable(self):  
+        self.__appendMeshColumns()
         isDouble = True
         if self.precision == cfg.floatPrecision:
             isDouble = False
         filename = os.path.expanduser("~/.extractor.xml")
         hdf.Exporter.exportAsVotable(self.hdfData, self.exportedDataHeader, self.exportedData, filename, isDouble)
         self.sampWidget.sendTable(filename)
+        
         
         
     def __switchMenuState(self, value):
