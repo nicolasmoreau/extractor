@@ -68,6 +68,14 @@ class PointerFactory(object):
         self.pointer.description = description
         return self
         
+    def withObjParent(self, parent):
+        self.pointer.objParent = parent
+        return self
+        
+    def withGroup(self, group):
+        self.pointer.group = group
+        return self
+        
     def getPointer(self):
         return self.pointer
     
@@ -89,6 +97,8 @@ class Pointer(object):
         self.utype = None
         self.unit = None
         self.description = None
+        self.objParent = None
+        self.group = None
 
   
 class PdrHDF(object):
@@ -139,7 +149,8 @@ class PdrHDF(object):
             pf.withName(line[4]).withColumn(line[2])
             pf.withUnit(line[6]).withUcd(line[8])
             pf.withSkos(line[7]).withUtype(line[9])
-            pf.withDescription(line[10]).getPointer()
+            pf.withDescription(line[10]).withObjParent(line[11])
+            pf.withGroup(line[12]).getPointer()
             datasets[line[1]][line[4]] = pf.getPointer()
         return datasets
         
@@ -195,7 +206,6 @@ class Writer(object):
             result = ''
             if self.header is not None :
                 result += "".join(self.header)
-            for pointer in self.pointers:
                 result+=pointer.name+self.separator
             f.write(result[0:len(result)-1]+"\n")
             size = len(self.columns[0])

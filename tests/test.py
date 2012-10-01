@@ -12,7 +12,8 @@ class TestPointerFactory(unittest.TestCase):
         factory.withPath('path').withDataset('dataset')
         factory.withName('name').withColumn('column').withUnit('unit')
         factory.withUcd('ucd').withSkos('skos').withUtype('utype')
-        factory.withDescription('description')
+        factory.withDescription('description').withObjParent('objParent')
+        factory.withGroup('group')
         self.pointer = factory.getPointer()      
      
     def test_getPointer(self):
@@ -25,6 +26,8 @@ class TestPointerFactory(unittest.TestCase):
         self.assertTrue(self.pointer.skos=='skos')
         self.assertTrue(self.pointer.utype=='utype')
         self.assertTrue(self.pointer.description=='description')
+        self.assertTrue(self.pointer.objParent=='objParent')
+        self.assertTrue(self.pointer.group=='group')
         
 class TestPointer(unittest.TestCase):     
     def test_getPointer(self):
@@ -38,6 +41,8 @@ class TestPointer(unittest.TestCase):
         self.assertTrue(p.skos is None)
         self.assertTrue(p.utype is None)
         self.assertTrue(p.description is None)
+        self.assertTrue(p.objParent is None)
+        self.assertTrue(p.group is None)
         
 class TestConversion(unittest.TestCase):
     def test_float(self):        
@@ -64,23 +69,25 @@ class TestPdrHDF(unittest.TestCase):
         dataset = group['Abundances'][0]
         self.assertTrue(len(dataset) == 137)
         
-    def test_index(self):
-        pointer = self.hdf.index['Abundances']['n(C)']        
-        self.assertTrue(pointer.name == 'n(C)')
+    def test_index(self):        
+        pointer = self.hdf.index['Abundances']['n(H2)']        
+        self.assertTrue(pointer.name == 'n(H2)')        
         self.assertTrue(pointer.path == '/CloudStructure/Abundances')
         self.assertTrue(pointer.dataset == 'Abundances')
-        self.assertTrue(pointer.column == '3')
+        self.assertTrue(pointer.column == '1')
         self.assertTrue(pointer.unit == 'cm-3')
         self.assertTrue(pointer.ucd == 'none')
-        self.assertTrue(pointer.skos == 'http://purl.org/astronomy/vocab/PhysicalQuantities/AbundanceOfOKTJSMMVPCPJKN-UHFFFAOYSA-N')
-        self.assertTrue(pointer.utype == 'none')
+        self.assertTrue(pointer.skos == 'http://purl.org/astronomy/vocab/PhysicalQuantities/AbundanceOfUFHFLCQGNIYNRP-UHFFFAOYSA-N')
+        self.assertTrue(pointer.utype == 'SimDM:/object/Property.label')
         self.assertTrue(pointer.description == 'No description')    
+        self.assertTrue(pointer.objParent == 'Gas')  
+        self.assertTrue(pointer.group == 'MeshCell')  
         
     def test_extractQuantity(self):
-        pointer = self.hdf.index['Abundances']['n(C)'] 
+        pointer = self.hdf.index['Abundances']['n(H2)'] 
         data = self.hdf.extractQuantity(pointer)
         self.assertTrue(len(data) == 413)
-        self.assertTrue(data[0] == 0.00066791594955656667)
+        self.assertTrue(data[0] == 0.6252262921840082)
         
 class TestFieldFactory(unittest.TestCase):
     def setUp(self):
