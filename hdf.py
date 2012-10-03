@@ -159,7 +159,10 @@ class PdrHDF(object):
             extract a quantity according to the pointer p
         """
         ds = self.f[p.path+'/'+p.dataset]
-        return [row[int(p.column)] for row in ds]
+        if len(ds.shape) == 1:
+            return ds
+        else :        
+            return [row[int(p.column)] for row in ds]
  
         
 class Writer(object):
@@ -234,7 +237,9 @@ class Writer(object):
         
         if len(self.columns) > 0 :
             size = len(self.columns[0])
+            print "size : ", size
             for i in range(1, len(self.columns)):
+                print "other size : ", len(self.columns[i])
                 if len(self.columns[i]) != size:
                     raise Exception('all the columns do not have the same size')
             return True        
