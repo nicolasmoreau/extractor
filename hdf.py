@@ -159,6 +159,7 @@ class PdrHDF(object):
             extract a quantity according to the pointer p
         """
         ds = self.f[p.path+'/'+p.dataset]
+        #1D array, returned directly
         if len(ds.shape) == 1:
             return ds
         else :        
@@ -237,9 +238,7 @@ class Writer(object):
         
         if len(self.columns) > 0 :
             size = len(self.columns[0])
-            print "size : ", size
             for i in range(1, len(self.columns)):
-                print "other size : ", len(self.columns[i])
                 if len(self.columns[i]) != size:
                     raise Exception('all the columns do not have the same size')
             return True        

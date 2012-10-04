@@ -277,38 +277,52 @@ class AutocompleteEntry(tk.Entry):
 class AutocompleteCombobox(ttk.Combobox): 
         def set_completion_list(self, completion_list, special_chars): 
                 """Use our completion list as our drop down selection menu, arrows move through menu.""" 
-                self._completion_list = sorted(completion_list) # Work with a sorted list 
-                
+                self._datasets, self._completion_list = self._cleanautocomplete(sorted(completion_list))
+                #self._completion_list = sorted(completion_list) # Work with a sorted list                 
                 self._hits = [] 
                 self._hit_index = 0 
                 self._specials = special_chars
+                self._currentgroup = ''
                 self.position = 0 
                 self.bind('<KeyRelease>', self.handle_keyrelease) 
                 self['values'] = self._completion_list  # Setup our popup menu 
+                
+        def _cleanautocomplete(self, completion_list):
+            datasets = []
+            columns = []
+            
+            for value in completion_list:
+                parts = value.split(cfg.separator)
+                datasets.append(parts[0])
+                columns.append(parts[1])
+            return datasets, columns
+                
 
         def autocomplete(self, delta=0): 
                 """autocomplete the Combobox, delta may be 0/1/-1 to cycle through possible hits""" 
                 if delta: # need to delete selection otherwise we would fix the current position 
-                        self.delete(self.position, tk.END) 
+                    self.delete(self.position, tk.END) 
                 else: # set position to end so selection starts where textentry ended 
-                        self.position = len(self.get()) 
+                    self.position = len(ttk.Combobox.get(self)) 
                 # collect hits 
                 _hits = [] 
                 for element in self._completion_list: 
-                        if element.startswith(self.get()): # Match case insensitively 
-                                _hits.append(element) 
+                    #short_elem = element.split(':')[1]
+                    if element.startswith(ttk.Combobox.get(self)): # Match case insensitively 
+                        #_hits.append(short_elem) 
+                        _hits.append(element) 
                 # if we have a new hit list, keep this in mind 
                 if _hits != self._hits: 
-                        self._hit_index = 0 
-                        self._hits=_hits 
+                    self._hit_index = 0 
+                    self._hits=_hits 
                 # only allow cycling if we are in a known hit list 
                 if _hits == self._hits and self._hits: 
-                        self._hit_index = (self._hit_index + delta) % len(self._hits) 
+                    self._hit_index = (self._hit_index + delta) % len(self._hits) 
                 # now finally perform the auto completion 
                 if self._hits: 
-                        self.delete(0,tk.END) 
-                        self.insert(0,self._hits[self._hit_index]) 
-                        self.select_range(self.position,tk.END) 
+                    self.delete(0,tk.END) 
+                    self.insert(0,self._hits[self._hit_index]) 
+                    self.select_range(self.position,tk.END) 
 
         def handle_keyrelease(self, event): 
                 """event handler for the keyrelease event on this widget""" 
@@ -327,8 +341,12 @@ class AutocompleteCombobox(ttk.Combobox):
                     self.autocomplete() 
                 # No need for up/down, we'll jump to the popup 
                 # list at the position of the autocompletion 
-
-            
+                
+        def get(self):
+            value = ttk.Combobox.get(self)
+            return self._datasets[self['values'].index(value)]+cfg.internalSeparator+ttk.Combobox.get(self)
+             #return "test"+super(AutocompleteCombobox, self).get()
+           
 
 class MainFrame(object):
     def __init__(self, parent):      
@@ -417,7 +435,7 @@ class MainFrame(object):
           
         
         self.autocomplete = TkFactory.buildAutocompleteEntry(topframe, "Enter the text : ", 50)
-        self.autocomplete.pack(side=tk.LEFT)    
+        self.autocomplete.pack(side=tk.LEFT)            
         
         selectionframe = tk.LabelFrame(self.contentFrame, text="Column", pady=10)      
         selectionframe.grid(row=1,rowspan=2,column=0, sticky = tk.W+tk.E+tk.N+tk.S)   
@@ -434,7 +452,7 @@ class MainFrame(object):
         clearButton.grid(row=0, column=0)
         selectAllButton =  TkFactory.buildButton(buttonFrame, "select all", lambda : self.datasetContentBox.selection_set(0, tk.END))  
         selectAllButton.grid(row=1, column=0)
-        confirmButton =  TkFactory.buildButton(buttonFrame, "confirm", self.__addSelectedData)  
+        confirmButton =  TkFactory.buildButton(buttonFrame, "confirm", lambda :self.__addSelectedData(self.datasetContentBox.curselection()))  
         confirmButton.grid(row=2, column=0)   
         
         self.columnDescriptionText=tk.Text(selectionframe,height=10,width=50,background='white', state=tk.DISABLED)    
@@ -524,9 +542,11 @@ class MainFrame(object):
         keys = []
         for key in self.hdfData.index:
             for otherkey in self.hdfData.index[key]:
-                keys.append(otherkey)
+                keys.append(key+cfg.separator+otherkey)
         self.autocomplete.set_completion_list(keys, ['parenleft','parenright','KP_Subtract','KP_Add','minus','equal','plus','=','less','greater','comma','slash', 'KP_Divide','colon'])
+        self.autocomplete.bind('<Return>', self.__addColumn)
         
+       
     def __makeMenuBar(self, menuContainer):
         """
             build the menu bar
@@ -646,17 +666,24 @@ class MainFrame(object):
         self.__setButtonsState(False)    
         self.defaultColumnAdded = False     
        
-    def __addSelectedData(self):
+    def __addSelectedData(self, values):
         """
             add selected data to the export list and list widget
         """       
-        for i in self.datasetContentBox.curselection():
+        for i in values:
             self.exportedDataWidget.insert(tk.END,self.currentDataset+':'+self.datasetContentBox.get(i))
             self.exportedData.append(self.currentDataset+cfg.internalSeparator+self.datasetContentBox.get(i))
-        if len(self.datasetContentBox.curselection()) >0 :
+        if len(self.datasetContentBox.curselection()) >0:
             self.__setButtonsState(True)            
         #clean selection once used        
         self.datasetContentBox.selection_clear(0, tk.END)
+        
+    def __addColumn(self, event):
+        value = event.widget.get().split(cfg.internalSeparator)        
+        self.exportedDataWidget.insert(tk.END,value[0]+':'+value[1])
+        self.exportedData.append(event.widget.get())
+        self.__setButtonsState(True)       # to modify, changing value each time is not necesary
+        
         
     def __removeSelectedData(self):
         """
